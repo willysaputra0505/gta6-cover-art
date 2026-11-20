@@ -21,7 +21,8 @@ export async function runShot(shot, query, app) {
   // Tall sample photos cover-fit to the torso at zoom 1, so wide panels
   // (hero, grid) cut the subject's face off. A downward shift pulls the
   // face back into frame. Tall panels (triptych, slant) already show the
-  // full height, so they leave oy at 0.
+  // full height, so they leave oy at 0. Full Bleed needs no oy at all: it
+  // contain-fits the whole photo, so the subject is never cropped.
   const oy = Number.parseFloat(query.get('oy') || '0') || 0;
   if (oy !== 0) {
     window.__neonBay.state.panels.forEach((p) => { p.oy = oy; });

@@ -20,7 +20,7 @@ const PREVIEW_PX = { square: [640, 640], portrait: [576, 720], wide: [768, 432] 
 const state = {
   photos: [], // { img, name }
   panels: [], // { photo, zoom, ox, oy } — one per layout panel
-  layoutId: 'hero',
+  layoutId: 'fullbleed',
   gradeId: 'sunset',
   sizeId: 'square',
   title: 'Mandy',

@@ -1,8 +1,8 @@
 // Neon Bay Cover Studio — the cover renderer.
-// Draws multi-panel, GTA-poster-style cover art on a canvas: the user's photos
-// in panel quads, a sunset / neon / noir colour grade, and big gradient caption
-// lettering in the bundled DejaVu Sans Bold. Pure drawing, no DOM besides the
-// canvas it is handed.
+// Draws GTA-poster-style cover art on a canvas: the user's photos in panel
+// quads (or one photo, edge to edge, in Full Bleed), a sunset / neon / noir
+// colour grade, and big gradient caption lettering in the bundled DejaVu
+// Sans Bold. Pure drawing, no DOM besides the canvas it is handed.
 
 export const SIZES = {
   square: { label: 'Square', w: 1080, h: 1080 },
@@ -60,6 +60,18 @@ export const LAYOUTS = [
         poly([[0, 0], [0.56, 0], [0.46, 0.78], [0, 0.78]], w, h),
         poly([[0.6, 0], [1, 0], [1, 0.78], [0.5, 0.78]], w, h),
       ];
+    },
+  },
+  {
+    id: 'fullbleed',
+    name: 'Full Bleed',
+    // One photo, no panels: the whole cover is a single photo, edge to
+    // edge, with the caption overlaid at the bottom on a dark scrim.
+    caption: { x: 0, y: 0.78, w: 1, h: 0.22 },
+    scrim: true,
+    fullBleed: true,
+    panels(w, h) {
+      return [quad(0, 0, 1, 1, w, h)];
     },
   },
 ];
@@ -160,6 +172,31 @@ function drawPhotoInQuad(ctx, img, pts, zoom, ox, oy, filter) {
   tracePath(ctx, pts);
   ctx.clip();
   ctx.filter = filter;
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.restore();
+}
+
+// Full Bleed: one photo with nothing cropped out. A blurred, darkened copy
+// of the same photo fills the frame behind it, so the subject is fully
+// visible at any export size — portrait, square or wide.
+function drawFullBleedPhoto(ctx, img, w, h, zoom, ox, oy, grade) {
+  // Backdrop: the photo cover-fitting the frame, blurred and darkened.
+  const cover = Math.max(w / img.naturalWidth, h / img.naturalHeight);
+  const bw = img.naturalWidth * cover;
+  const bh = img.naturalHeight * cover;
+  ctx.save();
+  ctx.filter = 'blur(48px) brightness(0.45) saturate(1.25)';
+  ctx.drawImage(img, (w - bw) / 2, (h - bh) / 2, bw, bh);
+  ctx.restore();
+  // The photo itself, contain-fit so the subject is never cropped; zoom
+  // scales it up from there and ox/oy pan it, like the panel layouts.
+  const fit = Math.min(w / img.naturalWidth, h / img.naturalHeight) * (zoom || 1);
+  const dw = img.naturalWidth * fit;
+  const dh = img.naturalHeight * fit;
+  const dx = (w - dw) / 2 + (ox || 0) * w;
+  const dy = (h - dh) / 2 + (oy || 0) * h;
+  ctx.save();
+  ctx.filter = grade.filter;
   ctx.drawImage(img, dx, dy, dw, dh);
   ctx.restore();
 }
@@ -322,7 +359,11 @@ export function drawCover(canvas, state) {
     const slot = state.panels[i] || { photo: 0, zoom: 1, ox: 0, oy: 0 };
     const img = slot.photo >= 0 ? state.photos[slot.photo] : null;
     if (img) {
-      drawPhotoInQuad(ctx, img, pts, slot.zoom || 1, slot.ox || 0, slot.oy || 0, grade.filter);
+      if (layout.fullBleed) {
+        drawFullBleedPhoto(ctx, img, w, h, slot.zoom || 1, slot.ox || 0, slot.oy || 0, grade);
+      } else {
+        drawPhotoInQuad(ctx, img, pts, slot.zoom || 1, slot.ox || 0, slot.oy || 0, grade.filter);
+      }
     } else {
       // Empty panel: a dusk gradient with a dashed frame, inviting a photo.
       ctx.save();
