@@ -23,8 +23,8 @@ const state = {
   layoutId: 'hero',
   gradeId: 'sunset',
   sizeId: 'square',
-  title: 'Sunset Heist',
-  subtitle: 'Neon Bay — one last ride',
+  title: 'Mandy',
+  subtitle: 'Neon Bay — One Last Ride',
   selected: 0,
 };
 
